@@ -7,7 +7,7 @@ speed = 20000
 ## rust-dap
 # usb_vid = "6666"
 # usb_pid = "4444"
-# serial = "test"
+# serial = "TEST"
 
 
 [default.flashing]
@@ -36,4 +36,4 @@ log_path = "./logs"
 
 [default.gdb]
 enabled = false
-gdb_connection_string = "127.0.0.1:2345"
+gdb_connection_string = "127.0.0.1:3333"
