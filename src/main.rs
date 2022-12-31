@@ -1,18 +1,15 @@
 #![no_std]
 #![no_main]
 
-mod math;
 use cortex_m_semihosting::hprintln;
 use embedded_hal::PwmPin;
 use fugit::RateExtU32;
-use math::map_value;
 use panic_halt as _;
 use rp_pico::entry;
 use rp_pico::hal;
 use rp_pico::hal::pac;
 use vl53l0x;
 
-const LOW: u16 = 0;
 const HIGH: u16 = 25000;
 
 #[entry]
