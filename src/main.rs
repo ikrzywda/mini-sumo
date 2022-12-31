@@ -1,14 +1,19 @@
 #![no_std]
 #![no_main]
 
-mod sample;
+mod math;
 use cortex_m_semihosting::hprintln;
+use embedded_hal::PwmPin;
 use fugit::RateExtU32;
+use math::map_value;
 use panic_halt as _;
 use rp_pico::entry;
 use rp_pico::hal;
 use rp_pico::hal::pac;
 use vl53l0x;
+
+const LOW: u16 = 0;
+const HIGH: u16 = 25000;
 
 #[entry]
 fn main() -> ! {
@@ -31,23 +36,33 @@ fn main() -> ! {
         125_000_000_u32.Hz(),
     );
 
-    let timer = hal::Timer::new(pac.TIMER, &mut pac.RESETS);
-    let mut time = 0;
     let mut laser_sensor = vl53l0x::VL53L0x::new(i2c).ok().unwrap();
 
+    let led_pin = pins.gpio18.into_mode::<hal::gpio::FunctionPwm>();
+    let mut pwm_slices = hal::pwm::Slices::new(pac.PWM, &mut pac.RESETS);
+
+    let pwm = &mut pwm_slices.pwm1;
+    pwm.set_ph_correct();
+    pwm.enable();
+
+    let channel = &mut pwm.channel_a;
+    channel.output_to(led_pin);
+
     loop {
-        if timer.get_counter() - time >= 200 {
-            match laser_sensor.read_range_single_millimeters_blocking() {
-                Ok(value) => {
-                    hprintln!("Result: {}", value);
+        match laser_sensor.read_range_single_millimeters_blocking() {
+            Ok(value) => {
+                if value <= 2_000 {
+                    let mapped = value * (HIGH / 2_000);
+                    channel.set_duty(mapped);
+                } else {
+                    channel.set_duty(0);
                 }
-                Err(err) => {
-                    hprintln!("{:?}", err);
-                    panic!();
-                }
-            };
-            time = timer.get_counter();
-        }
+            }
+            Err(err) => {
+                hprintln!("{:?}", err);
+                panic!();
+            }
+        };
     }
 }
 
