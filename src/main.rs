@@ -2,6 +2,7 @@
 #![no_main]
 
 use cortex_m_semihosting::hprintln;
+use embedded_hal::adc::OneShot;
 use embedded_hal::PwmPin;
 use fugit::RateExtU32;
 use panic_halt as _;
@@ -45,7 +46,12 @@ fn main() -> ! {
     let channel = &mut pwm.channel_a;
     channel.output_to(led_pin);
 
+    let mut adc = hal::adc::Adc::new(pac.ADC, &mut pac.RESETS);
+    let mut reflectance_sensor_pin = pins.gpio26.into_floating_input();
+
     loop {
+        let adc_res: u16 = adc.read(&mut reflectance_sensor_pin).unwrap();
+        hprintln!("{}", adc_res);
         match laser_sensor.read_range_single_millimeters_blocking() {
             Ok(value) => {
                 if value <= 2_000 {
